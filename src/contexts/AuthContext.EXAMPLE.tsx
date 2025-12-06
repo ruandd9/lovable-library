@@ -1,3 +1,6 @@
+// EXEMPLO DE COMO ATUALIZAR O AuthContext PARA USAR API REAL
+// Copie este código para src/contexts/AuthContext.tsx
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { authAPI, purchasesAPI } from '@/services/api';
 
@@ -15,7 +18,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   register: (name: string, email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
-  purchaseApostila: (apostilaId: string) => void;
+  purchaseApostila: (apostilaId: string) => Promise<{ success: boolean; error?: string }>;
   hasPurchased: (apostilaId: string) => boolean;
 }
 
@@ -33,6 +36,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (storedToken && storedUser) {
       setToken(storedToken);
       setUser(JSON.parse(storedUser));
+      
+      // Validar token com backend
+      authAPI.getMe()
+        .then(response => {
+          if (response.data.success) {
+            setUser(response.data.data);
+            localStorage.setItem('auth_user', JSON.stringify(response.data.data));
+          }
+        })
+        .catch(() => {
+          // Token inválido, fazer logout
+          logout();
+        });
     }
     setIsLoading(false);
   }, []);
@@ -45,24 +61,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       if (response.data.success) {
         const { token: authToken, ...userData } = response.data.data;
         
-        const userWithPurchases: User = {
-          id: userData.id,
-          name: userData.name,
-          email: userData.email,
-          purchasedApostilas: userData.purchasedApostilas || [],
-        };
-        
         localStorage.setItem('auth_token', authToken);
-        localStorage.setItem('auth_user', JSON.stringify(userWithPurchases));
+        localStorage.setItem('auth_user', JSON.stringify(userData));
         
-        setUser(userWithPurchases);
+        setUser(userData);
         setToken(authToken);
         setIsLoading(false);
         return { success: true };
       }
       
       setIsLoading(false);
-      return { success: false, error: 'Email ou senha incorretos' };
+      return { success: false, error: 'Erro ao fazer login' };
     } catch (error: any) {
       setIsLoading(false);
       const errorMessage = error.response?.data?.message || 'Erro ao conectar com o servidor';
@@ -78,17 +87,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       if (response.data.success) {
         const { token: authToken, ...userData } = response.data.data;
         
-        const newUser: User = {
-          id: userData.id,
-          name: userData.name,
-          email: userData.email,
-          purchasedApostilas: userData.purchasedApostilas || [],
-        };
-        
         localStorage.setItem('auth_token', authToken);
-        localStorage.setItem('auth_user', JSON.stringify(newUser));
+        localStorage.setItem('auth_user', JSON.stringify(userData));
         
-        setUser(newUser);
+        setUser(userData);
         setToken(authToken);
         setIsLoading(false);
         return { success: true };
@@ -98,7 +100,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       return { success: false, error: 'Erro ao criar conta' };
     } catch (error: any) {
       setIsLoading(false);
-      const errorMessage = error.response?.data?.message || error.response?.data?.errors?.[0]?.msg || 'Erro ao criar conta';
+      const errorMessage = error.response?.data?.message || 'Erro ao criar conta';
       return { success: false, error: errorMessage };
     }
   };
@@ -110,21 +112,25 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setToken(null);
   };
 
-  const purchaseApostila = async (apostilaId: string) => {
-    if (user) {
-      try {
-        await purchasesAPI.create(apostilaId);
-        
+  const purchaseApostila = async (apostilaId: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const response = await purchasesAPI.create(apostilaId, 'credit_card');
+      
+      if (response.data.success && user) {
+        // Atualizar lista de apostilas compradas
         const updatedUser = {
           ...user,
           purchasedApostilas: [...user.purchasedApostilas, apostilaId],
         };
         setUser(updatedUser);
         localStorage.setItem('auth_user', JSON.stringify(updatedUser));
-      } catch (error) {
-        console.error('Erro ao realizar compra:', error);
-        throw error;
+        return { success: true };
       }
+      
+      return { success: false, error: 'Erro ao processar compra' };
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || 'Erro ao processar compra';
+      return { success: false, error: errorMessage };
     }
   };
 
