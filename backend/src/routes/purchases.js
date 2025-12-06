@@ -34,10 +34,22 @@ router.post('/create-payment-intent', protect, async (req, res) => {
 
     // Verificar se Stripe está configurado
     const stripe = getStripe();
+    
     if (!stripe) {
-      return res.status(503).json({
-        success: false,
-        message: 'Stripe não está configurado.'
+      // MODO MOCK: Simular Stripe quando não configurado
+      console.log('⚠️  Stripe não configurado, usando modo MOCK para cartão');
+      const mockPaymentIntentId = `pi_mock_card_${Date.now()}`;
+      
+      return res.json({
+        success: true,
+        clientSecret: `${mockPaymentIntentId}_secret_mock`,
+        paymentIntentId: mockPaymentIntentId,
+        apostila: {
+          id: apostila._id,
+          title: apostila.title,
+          price: apostila.price
+        },
+        mock: true
       });
     }
 
@@ -107,8 +119,7 @@ router.post('/create-pix-payment', protect, async (req, res) => {
       });
     }
 
-    // Modo teste: Simular PIX (Stripe test mode pode não suportar PIX)
-    // Em produção, usar: payment_method_types: ['pix']
+    // Tentar criar PIX no Stripe (funciona com sk_test_)
     try {
       const paymentIntent = await stripe.paymentIntents.create({
         amount: Math.round(apostila.price * 100),
@@ -133,8 +144,8 @@ router.post('/create-pix-payment', protect, async (req, res) => {
         }
       });
     } catch (stripeError) {
-      // Se Stripe não suportar PIX em test mode, criar mock
-      console.log('⚠️  Stripe PIX não disponível em test mode, usando simulação');
+      // Se Stripe não suportar PIX, criar mock
+      console.log('⚠️  Stripe PIX não disponível, usando simulação:', stripeError.message);
       const mockPaymentIntentId = `pi_pix_test_${Date.now()}`;
       
       res.json({
