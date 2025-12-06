@@ -41,6 +41,28 @@ const Dashboard: React.FC = () => {
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [loadingApostilas, setLoadingApostilas] = useState(true);
   const [activeTab, setActiveTab] = useState<'apostilas' | 'compras'>('apostilas');
+  const [hasUnreadPurchases, setHasUnreadPurchases] = useState(false);
+
+  // Verificar se há compras não lidas
+  useEffect(() => {
+    if (purchases.length > 0) {
+      const lastViewedTime = localStorage.getItem('lastViewedPurchases');
+      const latestPurchaseTime = new Date(purchases[0].purchaseDate).getTime();
+      
+      if (!lastViewedTime || latestPurchaseTime > parseInt(lastViewedTime)) {
+        setHasUnreadPurchases(true);
+      }
+    }
+  }, [purchases]);
+
+  // Marcar compras como lidas quando visualizar a tab
+  useEffect(() => {
+    if (activeTab === 'compras' && hasUnreadPurchases) {
+      const now = Date.now();
+      localStorage.setItem('lastViewedPurchases', now.toString());
+      setHasUnreadPurchases(false);
+    }
+  }, [activeTab, hasUnreadPurchases]);
 
   // Fetch purchased apostilas
   useEffect(() => {
@@ -206,6 +228,11 @@ const Dashboard: React.FC = () => {
             >
               <ShoppingBag className="w-4 h-4 inline mr-2" />
               Minhas Compras
+              {hasUnreadPurchases && (
+                <span className="absolute -top-1 -right-1 w-5 h-5 bg-destructive text-destructive-foreground text-xs font-bold rounded-full flex items-center justify-center animate-pulse">
+                  {purchases.length}
+                </span>
+              )}
               {activeTab === 'compras' && (
                 <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
               )}
@@ -306,62 +333,74 @@ const Dashboard: React.FC = () => {
           {activeTab === 'compras' && purchases.length > 0 && (
             <div>
               <div className="space-y-4">
-                {purchases.map((purchase) => (
-                  <div
-                    key={purchase._id}
-                    className="bg-card rounded-2xl border border-border p-6 hover:shadow-lg transition-all duration-300"
-                  >
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                            <BookOpen className="w-6 h-6 text-primary" />
+                {purchases.map((purchase, index) => {
+                  const isNew = hasUnreadPurchases && index === 0;
+                  return (
+                    <div
+                      key={purchase._id}
+                      className={`bg-card rounded-2xl border p-6 hover:shadow-lg transition-all duration-300 ${
+                        isNew ? 'border-primary ring-2 ring-primary/20' : 'border-border'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-2">
+                            <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
+                              <BookOpen className="w-6 h-6 text-primary" />
+                            </div>
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2">
+                                <h3 className="font-semibold text-foreground">
+                                  {purchase.apostila?.title || 'Apostila'}
+                                </h3>
+                                {isNew && (
+                                  <span className="px-2 py-0.5 bg-primary text-primary-foreground text-xs font-bold rounded-full animate-pulse">
+                                    NOVA
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-sm text-muted-foreground">
+                                {purchase.apostila?.category}
+                              </p>
+                            </div>
                           </div>
-                          <div>
-                            <h3 className="font-semibold text-foreground">
-                              {purchase.apostila?.title || 'Apostila'}
-                            </h3>
-                            <p className="text-sm text-muted-foreground">
-                              {purchase.apostila?.category}
-                            </p>
+                          
+                          <div className="flex flex-wrap gap-4 mt-4 text-sm text-muted-foreground">
+                            <div className="flex items-center gap-2">
+                              <Calendar className="w-4 h-4" />
+                              {new Date(purchase.purchaseDate).toLocaleDateString('pt-BR', {
+                                day: '2-digit',
+                                month: 'long',
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <CreditCard className="w-4 h-4" />
+                              {purchase.paymentMethod === 'stripe' ? 'Cartão de Crédito' : 'Simulado'}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                purchase.status === 'completed' 
+                                  ? 'bg-success/10 text-success' 
+                                  : 'bg-muted text-muted-foreground'
+                              }`}>
+                                {purchase.status === 'completed' ? 'Concluído' : purchase.status}
+                              </span>
+                            </div>
                           </div>
                         </div>
                         
-                        <div className="flex flex-wrap gap-4 mt-4 text-sm text-muted-foreground">
-                          <div className="flex items-center gap-2">
-                            <Calendar className="w-4 h-4" />
-                            {new Date(purchase.purchaseDate).toLocaleDateString('pt-BR', {
-                              day: '2-digit',
-                              month: 'long',
-                              year: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            })}
+                        <div className="text-right">
+                          <div className="text-2xl font-bold text-primary">
+                            R$ {purchase.price.toFixed(2)}
                           </div>
-                          <div className="flex items-center gap-2">
-                            <CreditCard className="w-4 h-4" />
-                            {purchase.paymentMethod === 'stripe' ? 'Cartão de Crédito' : 'Simulado'}
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                              purchase.status === 'completed' 
-                                ? 'bg-success/10 text-success' 
-                                : 'bg-muted text-muted-foreground'
-                            }`}>
-                              {purchase.status === 'completed' ? 'Concluído' : purchase.status}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="text-right">
-                        <div className="text-2xl font-bold text-primary">
-                          R$ {purchase.price.toFixed(2)}
                         </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
