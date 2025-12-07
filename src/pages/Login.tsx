@@ -60,14 +60,8 @@ const Login: React.FC = () => {
               </div>
             )}
 
-            {/* Demo Credentials Info */}
-            <div className="mb-6 p-4 bg-primary/5 border border-primary/20 rounded-2xl">
-              <p className="text-sm text-muted-foreground">
-                <strong className="text-foreground">Credenciais de teste:</strong><br />
-                Email: teste@email.com<br />
-                Senha: 123456
-              </p>
-            </div>
+                       {/* Credentials Info */}
+
 
             <form onSubmit={handleSubmit} className="space-y-5">
               <div>
