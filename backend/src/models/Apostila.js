@@ -63,6 +63,9 @@ const apostilaSchema = new mongoose.Schema({
   topics: [{
     type: String
   }],
+  pdfUrl: {
+    type: String
+  },
   createdAt: {
     type: Date,
     default: Date.now

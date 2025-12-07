@@ -21,7 +21,8 @@ const apostilas = [
     lastUpdate: "Dezembro 2024",
     language: "Português",
     level: "Médio/Superior",
-    topics: ["Cinemática", "Dinâmica", "Energia", "Termodinâmica", "Eletricidade", "Magnetismo", "Óptica", "Física Moderna"]
+    topics: ["Cinemática", "Dinâmica", "Energia", "Termodinâmica", "Eletricidade", "Magnetismo", "Óptica", "Física Moderna"],
+    pdfUrl: "/pdfs/teste.pdf"
   }
 ];
 

@@ -4,6 +4,7 @@ import direitoCover from '@/assets/covers/direito-cover.jpg';
 import informaticaCover from '@/assets/covers/informatica-cover.jpg';
 import logicaCover from '@/assets/covers/logica-cover.jpg';
 import adminCover from '@/assets/covers/admin-cover.jpg';
+import fisicaCover from '@/assets/covers/fisica-cover.jpg';
 
 export interface Apostila {
   id: string;
@@ -24,6 +25,7 @@ export interface Apostila {
   language?: string;
   level?: string;
   topics?: string[];
+  pdfUrl?: string;
 }
 
 export const apostilas: Apostila[] = [
@@ -140,6 +142,26 @@ export const apostilas: Apostila[] = [
     language: "Português",
     level: "Superior",
     topics: ["Gestão Pública", "Políticas Públicas", "Governança", "Licitações", "Orçamento Público", "Controle"],
+  },
+  {
+    id: "7",
+    title: "Física Completa para ENEM e Vestibulares",
+    description: "Apostila completa de Física com teoria, exercícios resolvidos e simulados. Ideal para ENEM e vestibulares.",
+    longDescription: "Domine a Física de forma definitiva com esta apostila completa desenvolvida especialmente para o ENEM e principais vestibulares do Brasil. O material apresenta todos os conceitos de forma clara e objetiva, com centenas de exercícios resolvidos passo a passo. Inclui simulados completos, questões de vestibulares anteriores comentadas e dicas exclusivas para resolver questões rapidamente. Perfeita para quem quer garantir uma excelente nota em Física.",
+    price: 44.90,
+    originalPrice: 79.90,
+    category: "ENEM",
+    cover: fisicaCover,
+    pages: 380,
+    rating: 4.9,
+    reviews: 421,
+    features: ["400+ exercícios", "Simulados ENEM", "Fórmulas organizadas", "Videoaulas bônus"],
+    author: "Prof. Roberto Almeida",
+    lastUpdate: "Dezembro 2024",
+    language: "Português",
+    level: "Médio",
+    topics: ["Mecânica", "Termodinâmica", "Óptica", "Ondulatória", "Eletricidade", "Magnetismo"],
+    pdfUrl: "/pdfs/teste.pdf",
   },
 ];
 

@@ -204,3 +204,23 @@
     opacity: 0.7;
   }
 }
+
+/* React PDF Styles */
+.react-pdf__Page {
+  margin: 0 auto;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.react-pdf__Page__canvas {
+  margin: 0 auto;
+  display: block;
+}
+
+.react-pdf__Page__textContent {
+  border: 1px solid transparent;
+  box-shadow: none;
+}
+
+.react-pdf__Page__annotations {
+  border: 1px solid transparent;
+}

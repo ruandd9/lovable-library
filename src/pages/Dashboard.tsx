@@ -7,20 +7,19 @@ import { Apostila } from '@/data/apostilas';
 import { apostilasAPI, purchasesAPI } from '@/services/api';
 import { Button } from '@/components/ui/button';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import PDFViewerModal from '@/components/PDFViewerModal';
 import { 
   BookOpen, 
   Download, 
-  Eye, 
   Clock, 
   Star, 
   ShoppingBag,
   ChevronRight,
   Play,
   FileText,
-  Lock,
-  X,
   Calendar,
-  CreditCard
+  CreditCard,
+  X
 } from 'lucide-react';
 
 interface Purchase {
@@ -93,7 +92,8 @@ const Dashboard: React.FC = () => {
             lastUpdate: a.lastUpdate,
             language: a.language,
             level: a.level,
-            topics: a.topics
+            topics: a.topics,
+            pdfUrl: a.pdfUrl
           }));
         
         setPurchasedApostilas(purchased);
@@ -513,6 +513,13 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* PDF Viewer Modal */}
+      <PDFViewerModal
+        isOpen={isViewerOpen}
+        onClose={() => setIsViewerOpen(false)}
+        apostila={selectedApostila}
+      />
     </div>
   );
 };
