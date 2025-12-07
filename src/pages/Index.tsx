@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import ApostilaCard from '@/components/ApostilaCard';
+import FloatingElements from '@/components/FloatingElements';
 import { Button } from '@/components/ui/button';
 import { apostilas } from '@/data/apostilas';
 import { 
@@ -30,16 +31,18 @@ const Index: React.FC = () => {
 
       {/* Hero Section */}
       <section className="relative overflow-hidden gradient-hero">
+        <FloatingElements />
+        
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/10 rounded-full blur-3xl" />
           <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-accent/10 rounded-full blur-3xl" />
         </div>
         
-        <div className="container mx-auto px-4 py-20 lg:py-32 relative">
+        <div className="container mx-auto px-4 py-20 lg:py-32 relative z-10">
           <div className="max-w-3xl mx-auto text-center">
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-full text-primary text-sm font-medium mb-6 animate-fade-in">
               <Zap className="w-4 h-4" />
-              Materiais atualizados 2024
+              Materiais atualizados 2026
             </div>
             
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-foreground mb-6 animate-fade-in-up">
