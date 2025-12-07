@@ -17,7 +17,12 @@ import {
 } from 'lucide-react';
 
 const Index: React.FC = () => {
-  const featuredApostilas = apostilas.slice(0, 3);
+  // Reorganizar apostilas em destaque: Física no centro, outras duas com "em breve"
+  const featuredApostilas = [
+    { ...apostilas[0], isComingSoon: true }, // Matemática - em breve
+    apostilas[6], // Física - disponível (posição central)
+    { ...apostilas[1], isComingSoon: true }, // Português - em breve
+  ];
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -151,11 +156,37 @@ const Index: React.FC = () => {
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {featuredApostilas.map((apostila, index) => (
-              <div key={apostila.id} className="animate-fade-in-up" style={{ animationDelay: `${index * 0.1}s` }}>
-                <ApostilaCard apostila={apostila} />
-              </div>
-            ))}
+            {featuredApostilas.map((apostila, index) => {
+              const isComingSoon = apostila.isComingSoon || false;
+
+              // Card do meio (Física) usa o componente ApostilaCard original
+              if (!isComingSoon) {
+                return (
+                  <ApostilaCard key={apostila.id} apostila={apostila} index={index} />
+                );
+              }
+
+              // Cards laterais com efeito de inatividade
+              return (
+                <div 
+                  key={apostila.id} 
+                  className="animate-fade-in-up relative"
+                  style={{ animationDelay: `${index * 0.1}s` }}
+                >
+                  {/* Card com efeito de inatividade */}
+                  <div className="opacity-50 grayscale blur-[1px] pointer-events-none">
+                    <ApostilaCard apostila={apostila} index={index} />
+                  </div>
+
+                  {/* Badge "Em breve" sobreposto */}
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div className="bg-background/95 backdrop-blur-sm border-2 border-primary text-foreground px-6 py-3 rounded-2xl text-sm font-bold shadow-lg">
+                      Em breve
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
 
           <div className="text-center mt-8 md:hidden">

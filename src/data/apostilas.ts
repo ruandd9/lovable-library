@@ -26,6 +26,7 @@ export interface Apostila {
   level?: string;
   topics?: string[];
   pdfUrl?: string;
+  isComingSoon?: boolean;
 }
 
 export const apostilas: Apostila[] = [
