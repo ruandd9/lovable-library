@@ -1,10 +1,13 @@
 services:
   - type: web
     name: lovable-library-frontend
-    env: static
-    buildCommand: npm install && npm run build && cp public/_redirects dist/_redirects
-    staticPublishPath: ./dist
-    routes:
-      - type: rewrite
-        source: /*
-        destination: /index.html
+    env: node
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: VITE_API_URL
+        value: https://lovable-library.onrender.com/api
+      - key: VITE_STRIPE_PUBLIC_KEY
+        value: pk_test_51SXRkWBxkPo3eKC0bfzPEigVOyjgoqb50bsFcM8w8zxOkfH3HTlsVl0Ch1X9I0kGbNQtr7yoz2XNhCnUjDhgfMYZ00qo4TJZzp
