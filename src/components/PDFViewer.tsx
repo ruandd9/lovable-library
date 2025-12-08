@@ -24,26 +24,26 @@ interface PDFViewerProps {
 const PDFViewer: React.FC<PDFViewerProps> = ({ pdfUrl, title }) => {
   const [numPages, setNumPages] = useState<number>(0);
   const [pageNumber, setPageNumber] = useState<number>(1);
-  const [scale, setScale] = useState<number>(1.0);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [containerWidth, setContainerWidth] = useState<number>(0);
+  
+  // Calcular scale inicial baseado na largura
+  const getInitialScale = (width: number) => {
+    if (width < 640) return 0.4; // Mobile pequeno
+    if (width < 768) return 0.5; // Mobile
+    if (width < 1024) return 0.7; // Tablet
+    return 1.0; // Desktop
+  };
 
-  // Detectar largura da tela e ajustar scale inicial
+  const [scale, setScale] = useState<number>(() => 
+    typeof window !== 'undefined' ? getInitialScale(window.innerWidth) : 1.0
+  );
+
+  // Atualizar apenas containerWidth no resize, não o scale
   useEffect(() => {
     const updateWidth = () => {
-      const width = window.innerWidth;
-      setContainerWidth(width);
-      // Ajustar scale inicial baseado na largura
-      if (width < 640) {
-        setScale(0.4); // Mobile pequeno
-      } else if (width < 768) {
-        setScale(0.5); // Mobile
-      } else if (width < 1024) {
-        setScale(0.7); // Tablet
-      } else {
-        setScale(1.0); // Desktop
-      }
+      setContainerWidth(window.innerWidth);
     };
 
     updateWidth();
