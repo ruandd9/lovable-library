@@ -13,7 +13,7 @@ const Navbar: React.FC = () => {
   const navLinks = [
     { path: '/', label: 'Início' },
     { path: '/catalogo', label: 'Catálogo' },
-    ...(user ? [{ path: '/dashboard', label: 'Minhas Apostilas' }] : []),
+    ...(user ? [{ path: '/dashboard', label: 'Minha Apostila' }] : []),
   ];
 
   const isActive = (path: string) => location.pathname === path;
@@ -34,7 +34,7 @@ const Navbar: React.FC = () => {
               <BookOpen className="w-5 h-5 text-primary-foreground" />
             </div>
             <span className="text-xl font-bold text-foreground">
-              Apostila<span className="text-primary">Pro</span>
+              Física <span className="text-primary">4vest</span>
             </span>
           </Link>
 

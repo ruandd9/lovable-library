@@ -11,18 +11,15 @@ import {
   BookOpen, 
   Shield, 
   Zap, 
-  Award, 
   Users,
   CheckCircle,
   Star
 } from 'lucide-react';
 
 const Index: React.FC = () => {
-  // Reorganizar apostilas em destaque: Física no centro, outras duas com "em breve"
+  // Apenas apostila de Física disponível
   const featuredApostilas = [
-    { ...apostilas[0], isComingSoon: true }, // Matemática - em breve
-    apostilas[6], // Física - disponível (posição central)
-    { ...apostilas[1], isComingSoon: true }, // Português - em breve
+    apostilas[6], // Física - disponível
   ];
 
   return (
@@ -99,19 +96,19 @@ const Index: React.FC = () => {
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-              Por que escolher a ApostilaPro?
+              Por que escolher o Física 4vest?
             </h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              Oferecemos a melhor experiência de estudo com materiais de qualidade comprovada.
+              Oferecemos a melhor experiência de estudo com material de qualidade comprovada para vestibulares.
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid md:grid-cols-3 gap-6">
             {[
               {
                 icon: BookOpen,
                 title: 'Conteúdo Completo',
-                description: 'Teoria + exercícios resolvidos em cada apostila',
+                description: 'Teoria + exercícios resolvidos focados em vestibulares',
               },
               {
                 icon: Shield,
@@ -122,11 +119,6 @@ const Index: React.FC = () => {
                 icon: Zap,
                 title: 'Atualizações Grátis',
                 description: 'Receba todas as atualizações sem custo extra',
-              },
-              {
-                icon: Award,
-                title: 'Certificado',
-                description: 'Ganhe certificado de conclusão dos estudos',
               },
             ].map((feature, index) => (
               <div
@@ -164,38 +156,10 @@ const Index: React.FC = () => {
             </Link>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {featuredApostilas.map((apostila, index) => {
-              const isComingSoon = apostila.isComingSoon || false;
-
-              // Card do meio (Física) usa o componente ApostilaCard original
-              if (!isComingSoon) {
-                return (
-                  <ApostilaCard key={apostila.id} apostila={apostila} index={index} />
-                );
-              }
-
-              // Cards laterais com efeito de inatividade
-              return (
-                <div 
-                  key={apostila.id} 
-                  className="animate-fade-in-up relative"
-                  style={{ animationDelay: `${index * 0.1}s` }}
-                >
-                  {/* Card com efeito de inatividade */}
-                  <div className="opacity-50 grayscale blur-[1px] pointer-events-none">
-                    <ApostilaCard apostila={apostila} index={index} />
-                  </div>
-
-                  {/* Badge "Em breve" sobreposto */}
-                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <div className="bg-background/95 backdrop-blur-sm border-2 border-primary text-foreground px-6 py-3 rounded-2xl text-sm font-bold shadow-lg">
-                      Em breve
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+          <div className="flex justify-center">
+            {featuredApostilas.map((apostila, index) => (
+              <ApostilaCard key={apostila.id} apostila={apostila} index={index} />
+            ))}
           </div>
 
           <div className="text-center mt-8 md:hidden">
@@ -224,19 +188,19 @@ const Index: React.FC = () => {
           <div className="grid md:grid-cols-3 gap-6">
             {[
               {
-                name: 'Maria Silva',
-                role: 'Aprovada no TRT',
-                text: 'Material excelente! Consegui minha aprovação estudando apenas com as apostilas da ApostilaPro.',
+                name: 'Carlos Eduardo',
+                role: 'Aprovado na USP - Engenharia',
+                text: 'A apostila de Física foi fundamental para minha aprovação. Conteúdo claro e exercícios que realmente preparam para o vestibular.',
               },
               {
-                name: 'João Santos',
-                role: 'Aprovado na Polícia Federal',
-                text: 'Conteúdo didático e exercícios muito bem elaborados. Recomendo a todos!',
+                name: 'Beatriz Santos',
+                role: 'Aprovada na UNICAMP - Medicina',
+                text: 'Excelente material! Os exercícios são muito bem selecionados e a teoria é explicada de forma didática.',
               },
               {
-                name: 'Ana Costa',
-                role: 'Aprovada no ENEM',
-                text: 'As apostilas são completas e atualizadas. Tirei nota máxima na redação!',
+                name: 'Rafael Oliveira',
+                role: 'Aprovado no ITA',
+                text: 'Material completo e atualizado. Me ajudou muito nas questões mais difíceis de Física do vestibular.',
               },
             ].map((testimonial, index) => (
               <div
@@ -275,11 +239,11 @@ const Index: React.FC = () => {
             
             <div className="relative">
               <h2 className="text-3xl md:text-4xl font-bold text-primary-foreground mb-4">
-                Comece a estudar hoje mesmo!
+                Domine a Física e conquiste sua vaga!
               </h2>
               <p className="text-primary-foreground/80 mb-8 max-w-2xl mx-auto">
-                Crie sua conta gratuitamente e tenha acesso a materiais de amostra. 
-                Sua aprovação está a um clique de distância.
+                Adquira nossa apostila completa de Física e prepare-se para os principais vestibulares do Brasil. 
+                Sua aprovação começa aqui!
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                 <Link to="/cadastro">

@@ -18,7 +18,7 @@ const Footer: React.FC = () => {
               </span>
             </Link>
             <p className="text-muted-foreground text-sm">
-              Materiais de estudo de alta qualidade para você conquistar sua aprovação.
+              Material de Física de alta qualidade para vestibulares e ENEM.
             </p>
             <div className="flex items-center gap-3">
               <a
@@ -71,13 +71,8 @@ const Footer: React.FC = () => {
 
           {/* Categories */}
           <div>
-            <h4 className="font-semibold text-foreground mb-4">Categorias</h4>
+            <h4 className="font-semibold text-foreground mb-4">Física para</h4>
             <ul className="space-y-2">
-              <li>
-                <a href="#" className="text-muted-foreground hover:text-primary text-sm transition-colors">
-                  Concursos Públicos
-                </a>
-              </li>
               <li>
                 <a href="#" className="text-muted-foreground hover:text-primary text-sm transition-colors">
                   Vestibulares
@@ -90,7 +85,12 @@ const Footer: React.FC = () => {
               </li>
               <li>
                 <a href="#" className="text-muted-foreground hover:text-primary text-sm transition-colors">
-                  OAB
+                  Ensino Médio
+                </a>
+              </li>
+              <li>
+                <a href="#" className="text-muted-foreground hover:text-primary text-sm transition-colors">
+                  Reforço Escolar
                 </a>
               </li>
             </ul>
@@ -102,7 +102,7 @@ const Footer: React.FC = () => {
             <ul className="space-y-3">
               <li className="flex items-center gap-2 text-muted-foreground text-sm">
                 <Mail className="w-4 h-4 text-primary" />
-                contato@apostilapro.com
+                contato@fisica4vest.com
               </li>
               <li className="flex items-center gap-2 text-muted-foreground text-sm">
                 <Phone className="w-4 h-4 text-primary" />
@@ -118,7 +118,7 @@ const Footer: React.FC = () => {
 
         <div className="border-t border-border mt-8 pt-8 text-center">
           <p className="text-muted-foreground text-sm">
-            © {new Date().getFullYear()} ApostilaPro. Todos os direitos reservados.
+            © {new Date().getFullYear()} Física 4vest. Todos os direitos reservados.
           </p>
         </div>
       </div>
