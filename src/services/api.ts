@@ -80,6 +80,12 @@ export const purchasesAPI = {
   
   getById: (id: string) =>
     api.get(`/purchases/${id}`),
+  
+  simulatePixApproval: (paymentId: string) =>
+    api.post(`/purchases/simulate-pix-approval/${paymentId}`),
+  
+  forceApprovePayment: (paymentId: string) =>
+    api.post(`/purchases/force-approve/${paymentId}`),
 };
 
 export default api;

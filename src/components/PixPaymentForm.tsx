@@ -5,7 +5,7 @@ import { purchasesAPI } from '@/services/api';
 import { useToast } from '@/hooks/use-toast';
 
 interface PixPaymentFormProps {
-  paymentId: string;
+  paymentId: string | number;
   qrCode: string;
   qrCodeBase64?: string;
   amount: number;
@@ -15,7 +15,7 @@ interface PixPaymentFormProps {
 }
 
 export const PixPaymentForm = ({ 
-  paymentId,
+  paymentId: rawPaymentId,
   qrCode,
   qrCodeBase64,
   amount, 
@@ -23,6 +23,9 @@ export const PixPaymentForm = ({
   onError,
   onCancel 
 }: PixPaymentFormProps) => {
+  // Converter paymentId para string para evitar erros
+  const paymentId = String(rawPaymentId);
+  
   const { toast } = useToast();
   const [isChecking, setIsChecking] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -67,6 +70,8 @@ export const PixPaymentForm = ({
 
         const response = await purchasesAPI.checkPaymentStatus(paymentId);
         
+        console.log('🔍 Status atual do pagamento:', response.data.status);
+        
         // MercadoPago usa 'approved', Stripe usa 'succeeded'
         if (response.data.status === 'approved' || response.data.status === 'succeeded') {
           toast({
@@ -74,6 +79,10 @@ export const PixPaymentForm = ({
             description: 'PIX aprovado com sucesso',
           });
           onSuccess(paymentId);
+        } else if (response.data.status === 'pending') {
+          console.log('⏳ Pagamento ainda pendente, continuando polling...');
+        } else {
+          console.log('❌ Status inesperado:', response.data.status);
         }
       } catch (error) {
         console.error('Erro ao verificar status:', error);
@@ -182,14 +191,60 @@ export const PixPaymentForm = ({
         </ol>
       </div>
 
-      {/* Botão Cancelar */}
-      <Button
-        onClick={onCancel}
-        variant="outline"
-        className="w-full"
-      >
-        Cancelar
-      </Button>
+      {/* Botões de Ação */}
+      <div className="space-y-2">
+        {/* Botões de simulação apenas em desenvolvimento */}
+        {import.meta.env.DEV && (
+          <div className="space-y-2">
+            <Button
+              onClick={() => {
+                toast({
+                  title: 'Pagamento simulado!',
+                  description: 'PIX aprovado (modo desenvolvimento)',
+                });
+                // Simular aprovação diretamente sem chamar API
+                onSuccess(paymentId);
+              }}
+              className="w-full"
+              variant="default"
+            >
+              🧪 Simular Aprovação Local
+            </Button>
+            
+            <Button
+              onClick={async () => {
+                try {
+                  await purchasesAPI.forceApprovePayment(paymentId);
+                  toast({
+                    title: 'Pagamento forçado!',
+                    description: 'PIX marcado como aprovado no sistema',
+                  });
+                  onSuccess(paymentId);
+                } catch (error) {
+                  console.error('Erro ao forçar aprovação:', error);
+                  toast({
+                    title: 'Erro',
+                    description: 'Não foi possível forçar aprovação',
+                    variant: 'destructive',
+                  });
+                }
+              }}
+              className="w-full"
+              variant="outline"
+            >
+              🔧 Forçar Aprovação Real
+            </Button>
+          </div>
+        )}
+        
+        <Button
+          onClick={onCancel}
+          variant="outline"
+          className="w-full"
+        >
+          Cancelar
+        </Button>
+      </div>
 
       <p className="text-xs text-muted-foreground text-center">
         🔒 Pagamento seguro processado pelo MercadoPago
