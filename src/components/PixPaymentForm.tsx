@@ -47,7 +47,7 @@ export const PixPaymentForm = ({
     return () => clearInterval(timer);
   }, [onError]);
 
-  // Polling para verificar status do pagamento
+  // Polling para verificar status do pagamento - DESABILITADO TEMPORARIAMENTE
   useEffect(() => {
     const checkPaymentStatus = async () => {
       if (isChecking) return;
@@ -68,22 +68,12 @@ export const PixPaymentForm = ({
           return;
         }
 
-        const response = await purchasesAPI.checkPaymentStatus(paymentId);
+        // POLLING DESABILITADO - Não verificar automaticamente
+        console.log('⚠️ Polling automático DESABILITADO para evitar aprovações indevidas');
         
-        console.log('🔍 Status atual do pagamento:', response.data.status);
+        // Não fazer verificação automática
+        // const response = await purchasesAPI.checkPaymentStatus(paymentId);
         
-        // MercadoPago usa 'approved', Stripe usa 'succeeded'
-        if (response.data.status === 'approved' || response.data.status === 'succeeded') {
-          toast({
-            title: 'Pagamento confirmado!',
-            description: 'PIX aprovado com sucesso',
-          });
-          onSuccess(paymentId);
-        } else if (response.data.status === 'pending') {
-          console.log('⏳ Pagamento ainda pendente, continuando polling...');
-        } else {
-          console.log('❌ Status inesperado:', response.data.status);
-        }
       } catch (error) {
         console.error('Erro ao verificar status:', error);
       } finally {
@@ -91,13 +81,15 @@ export const PixPaymentForm = ({
       }
     };
 
-    // Verificar a cada 3 segundos
-    const interval = setInterval(checkPaymentStatus, 3000);
+    // POLLING DESABILITADO - Não verificar automaticamente
+    // const interval = setInterval(checkPaymentStatus, 3000);
     
-    // Verificar imediatamente
-    checkPaymentStatus();
+    // Verificar apenas uma vez para modos de teste
+    if (paymentId.startsWith('mp_pix_test_') || paymentId.startsWith('pi_pix_test_')) {
+      checkPaymentStatus();
+    }
 
-    return () => clearInterval(interval);
+    // return () => clearInterval(interval);
   }, [paymentId, onSuccess, toast]);
 
   const handleCopyPixCode = () => {
@@ -193,46 +185,68 @@ export const PixPaymentForm = ({
 
       {/* Botões de Ação */}
       <div className="space-y-2">
+        {/* Botão para verificar pagamento manualmente */}
+        <Button
+          onClick={async () => {
+            try {
+              setIsChecking(true);
+              const response = await purchasesAPI.checkPaymentStatus(paymentId);
+              
+              console.log('🔍 Status verificado manualmente:', response.data.status);
+              
+              if (response.data.status === 'approved' || response.data.status === 'succeeded') {
+                toast({
+                  title: 'Pagamento confirmado!',
+                  description: 'PIX aprovado com sucesso',
+                });
+                onSuccess(paymentId);
+              } else {
+                toast({
+                  title: 'Pagamento pendente',
+                  description: `Status: ${response.data.status}. Tente novamente após pagar.`,
+                  variant: 'default',
+                });
+              }
+            } catch (error) {
+              console.error('Erro ao verificar status:', error);
+              toast({
+                title: 'Erro ao verificar',
+                description: 'Não foi possível verificar o status do pagamento',
+                variant: 'destructive',
+              });
+            } finally {
+              setIsChecking(false);
+            }
+          }}
+          className="w-full"
+          disabled={isChecking}
+        >
+          {isChecking ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin mr-2" />
+              Verificando...
+            </>
+          ) : (
+            '🔍 Verificar se PIX foi Pago'
+          )}
+        </Button>
+
         {/* Botões de simulação apenas em desenvolvimento */}
         {import.meta.env.DEV && (
-          <div className="space-y-2">
+          <div className="space-y-2 mt-2">
             <Button
               onClick={() => {
                 toast({
                   title: 'Pagamento simulado!',
                   description: 'PIX aprovado (modo desenvolvimento)',
                 });
-                // Simular aprovação diretamente sem chamar API
                 onSuccess(paymentId);
               }}
               className="w-full"
-              variant="default"
-            >
-              🧪 Simular Aprovação Local
-            </Button>
-            
-            <Button
-              onClick={async () => {
-                try {
-                  await purchasesAPI.forceApprovePayment(paymentId);
-                  toast({
-                    title: 'Pagamento forçado!',
-                    description: 'PIX marcado como aprovado no sistema',
-                  });
-                  onSuccess(paymentId);
-                } catch (error) {
-                  console.error('Erro ao forçar aprovação:', error);
-                  toast({
-                    title: 'Erro',
-                    description: 'Não foi possível forçar aprovação',
-                    variant: 'destructive',
-                  });
-                }
-              }}
-              className="w-full"
               variant="outline"
+              size="sm"
             >
-              🔧 Forçar Aprovação Real
+              🧪 Simular Aprovação (Dev)
             </Button>
           </div>
         )}
