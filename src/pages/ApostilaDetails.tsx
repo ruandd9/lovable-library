@@ -9,6 +9,7 @@ import Footer from '@/components/Footer';
 import ScrollReveal from '@/components/ScrollReveal';
 import FloatingElements from '@/components/FloatingElements';
 import PurchaseModal from '@/components/PurchaseModal';
+import SimplePreferenceModal from '@/components/SimplePreferenceModal';
 import { Button } from '@/components/ui/button';
 import { 
   Star, 
@@ -33,6 +34,7 @@ const ApostilaDetails: React.FC = () => {
   const { user, hasPurchased } = useAuth();
   const [apostila, setApostila] = useState<Apostila | null>(null);
   const [showPurchaseModal, setShowPurchaseModal] = useState(false);
+  const [showSimplePreferenceModal, setShowSimplePreferenceModal] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -425,6 +427,19 @@ const ApostilaDetails: React.FC = () => {
       <PurchaseModal
         isOpen={showPurchaseModal}
         onClose={() => setShowPurchaseModal(false)}
+        onSimplePreferenceSelected={() => {
+          setShowPurchaseModal(false);
+          setTimeout(() => {
+            setShowSimplePreferenceModal(true);
+          }, 100);
+        }}
+        apostila={apostila}
+      />
+
+      {/* Simple Preference Modal */}
+      <SimplePreferenceModal
+        isOpen={showSimplePreferenceModal}
+        onClose={() => setShowSimplePreferenceModal(false)}
         apostila={apostila}
       />
     </div>

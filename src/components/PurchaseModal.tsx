@@ -10,16 +10,18 @@ import { Elements } from '@stripe/react-stripe-js';
 import { getStripe } from '@/lib/stripe';
 import { StripePaymentForm } from './StripePaymentForm';
 import { PixPaymentForm } from './PixPaymentForm';
+import SimplePreferenceModal from './SimplePreferenceModal';
 
 interface PurchaseModalProps {
   apostila: Apostila | null;
   isOpen: boolean;
   onClose: () => void;
+  onSimplePreferenceSelected?: () => void;
 }
 
-type PaymentMethod = 'stripe' | 'pix' | null;
+type PaymentMethod = 'stripe' | 'pix' | 'simple-preference' | null;
 
-const PurchaseModal: React.FC<PurchaseModalProps> = ({ apostila, isOpen, onClose }) => {
+const PurchaseModal: React.FC<PurchaseModalProps> = ({ apostila, isOpen, onClose, onSimplePreferenceSelected }) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -71,6 +73,14 @@ const PurchaseModal: React.FC<PurchaseModalProps> = ({ apostila, isOpen, onClose
         setQrCodeBase64(response.data.qr_code_base64);
         setShowPaymentForm(true);
         setIsProcessing(false);
+      } else if (paymentMethod === 'simple-preference') {
+        // Fechar modal atual e abrir modal de simple preference
+        onClose();
+        if (onSimplePreferenceSelected) {
+          onSimplePreferenceSelected();
+        }
+        setIsProcessing(false);
+        return;
       }
       
     } catch (error: any) {
@@ -241,6 +251,21 @@ const PurchaseModal: React.FC<PurchaseModalProps> = ({ apostila, isOpen, onClose
                 </div>
                 
                 <div className="space-y-3">
+                  <label className="flex items-center gap-3 p-3 bg-primary/10 border border-primary/20 rounded-xl cursor-pointer hover:bg-primary/20 transition-colors">
+                    <input
+                      type="radio"
+                      name="payment"
+                      checked={paymentMethod === 'simple-preference'}
+                      onChange={() => setPaymentMethod('simple-preference')}
+                      className="w-4 h-4 text-primary"
+                    />
+                    <ShieldCheck className="w-5 h-5 text-primary" />
+                    <div className="flex-1">
+                      <div className="font-medium text-sm">MercadoPago Completo ⭐</div>
+                      <div className="text-xs text-muted-foreground">PIX, Cartão ou Boleto - Interface oficial</div>
+                    </div>
+                  </label>
+
                   <label className="flex items-center gap-3 p-3 bg-secondary rounded-xl cursor-pointer hover:bg-secondary/80 transition-colors">
                     <input
                       type="radio"
@@ -251,7 +276,7 @@ const PurchaseModal: React.FC<PurchaseModalProps> = ({ apostila, isOpen, onClose
                     />
                     <QrCode className="w-5 h-5 text-primary" />
                     <div className="flex-1">
-                      <div className="font-medium text-sm">PIX</div>
+                      <div className="font-medium text-sm">PIX Direto</div>
                       <div className="text-xs text-muted-foreground">Pagamento instantâneo via QR Code</div>
                     </div>
                   </label>

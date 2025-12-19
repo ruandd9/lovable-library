@@ -86,6 +86,13 @@ export const purchasesAPI = {
   
   forceApprovePayment: (paymentId: string) =>
     api.post(`/purchases/force-approve/${paymentId}`),
+
+  // Simple Preference (Método Simples)
+  createSimplePreference: (apostilaId: string) =>
+    api.post('/simple-preference/create', { apostilaId }),
+  
+  confirmSimplePreference: (apostilaId: string, externalReference: string, paymentId?: string, status?: string) =>
+    api.post('/simple-preference/confirm', { apostilaId, externalReference, paymentId, status }),
 };
 
 export default api;

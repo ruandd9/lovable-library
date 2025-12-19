@@ -50,11 +50,11 @@ async function resetTestEnvironment() {
 
     // 2. Criar nova apostila de teste
     const testApostilaProd = {
-      title: "TESTE PRODUÇÃO - Validação PIX Real - R$ 2,00",
+      title: "TESTE PRODUÇÃO - Validação PIX Real - R$ 1,00",
       description: "Apostila de teste para validar PIX em produção. Use para testar pagamentos reais com valor baixo.",
       longDescription: "Esta é uma apostila de teste criada especificamente para validar o funcionamento do PIX em ambiente de produção. Contém conteúdo de demonstração e serve para testar o fluxo completo de pagamento com valores baixos. Após a validação, pode ser removida ou mantida para testes futuros.",
-      price: 2.00,
-      originalPrice: 2.00,
+      price: 1.00,
+      originalPrice: 1.00,
       category: "Vestibulares",
       cover: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400&h=600&fit=crop",
       pages: 5,
@@ -84,14 +84,14 @@ async function resetTestEnvironment() {
     
     console.log('✅ AMBIENTE DE TESTE RESETADO COM SUCESSO!');
     console.log('🆔 Nova Apostila ID:', apostila._id);
-    console.log('💰 Preço: R$ 2,00');
+    console.log('💰 Preço: R$ 1,00');
     console.log('🎯 Título:', apostila.title);
     console.log('');
     console.log('📋 PRONTO PARA TESTAR:');
     console.log('1. ✅ Apostila de teste criada');
     console.log('2. ✅ Compras anteriores removidas');
     console.log('3. ✅ Usuários podem comprar novamente');
-    console.log('4. ✅ PIX será gerado com R$ 2,00');
+    console.log('4. ✅ PIX será gerado com R$ 1,00');
     console.log('');
     console.log('🚀 Agora você pode testar a compra PIX normalmente!');
 
