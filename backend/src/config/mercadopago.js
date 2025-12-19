@@ -83,21 +83,27 @@ export const createPixPayment = async (paymentData) => {
           number: testCPF
         }
       },
-      // MELHORIAS PARA QUALIDADE DA INTEGRAÇÃO
-      items: [
-        {
-          id: paymentData.metadata?.apostilaId || 'apostila_001', // Código do item
-          title: paymentData.metadata?.apostilaTitle || 'Apostila Digital', // Nome do item
-          description: paymentData.description, // Descrição do item
-          category_id: 'education', // Categoria do item
-          quantity: 1, // Quantidade do produto/serviço
-          unit_price: paymentData.amount // Preço do item
-        }
-      ],
       // WEBHOOK NOTIFICATIONS (Ação obrigatória)
       notification_url: `${process.env.FRONTEND_URL || 'https://seu-dominio.com'}/api/purchases/webhook/mercadopago`,
-      // REFERÊNCIA EXTERNA (Ação obrigatória)
+      // REFERÊNCIA EXTERNA (Ação obrigatória)  
       external_reference: `apostila_${paymentData.metadata?.apostilaId}_${Date.now()}`,
+      // CAMPOS ADICIONAIS PARA QUALIDADE
+      additional_info: {
+        items: [
+          {
+            id: paymentData.metadata?.apostilaId || 'apostila_001',
+            title: paymentData.metadata?.apostilaTitle || 'Apostila Digital',
+            description: paymentData.description,
+            category_id: 'education',
+            quantity: 1,
+            unit_price: paymentData.amount
+          }
+        ],
+        payer: {
+          first_name: paymentData.payer.name,
+          last_name: 'Silva'
+        }
+      },
       metadata: paymentData.metadata || {}
     };
 
@@ -154,21 +160,27 @@ export const createPixPayment = async (paymentData) => {
                 number: '11144477735' // CPF de teste específico do MercadoPago
               }
             },
-            // MELHORIAS PARA QUALIDADE DA INTEGRAÇÃO
-            items: [
-              {
-                id: paymentData.metadata?.apostilaId || 'apostila_001',
-                title: paymentData.metadata?.apostilaTitle || 'Apostila Digital',
-                description: paymentData.description,
-                category_id: 'education',
-                quantity: 1,
-                unit_price: paymentData.amount
-              }
-            ],
             // WEBHOOK NOTIFICATIONS (Ação obrigatória)
             notification_url: `${process.env.FRONTEND_URL || 'https://seu-dominio.com'}/api/purchases/webhook/mercadopago`,
             // REFERÊNCIA EXTERNA (Ação obrigatória)
             external_reference: `apostila_${paymentData.metadata?.apostilaId}_${Date.now()}`,
+            // CAMPOS ADICIONAIS PARA QUALIDADE
+            additional_info: {
+              items: [
+                {
+                  id: paymentData.metadata?.apostilaId || 'apostila_001',
+                  title: paymentData.metadata?.apostilaTitle || 'Apostila Digital',
+                  description: paymentData.description,
+                  category_id: 'education',
+                  quantity: 1,
+                  unit_price: paymentData.amount
+                }
+              ],
+              payer: {
+                first_name: paymentData.payer.name,
+                last_name: 'Silva'
+              }
+            },
             metadata: paymentData.metadata || {}
           };
 
