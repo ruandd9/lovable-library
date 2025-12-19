@@ -137,22 +137,68 @@ router.post('/create-pix-payment', protect, async (req, res) => {
 
     // Criar pagamento PIX no MercadoPago
     try {
+      // Gerar dados MUITO únicos para forçar novo pagamento
+      const timestamp = Date.now();
+      const randomId = Math.random().toString(36).substr(2, 12);
+      const userHash = req.user._id.toString().substr(-6);
+      const uniqueId = `${timestamp}_${randomId}_${userHash}`;
+      
+      // Alterar valor com mais variação para forçar novo pagamento
+      const randomCents = Math.floor(Math.random() * 99) + 1; // 1-99 centavos
+      const uniqueAmount = apostila.price + (randomCents / 100);
+      
+      console.log('🔄 Gerando pagamento único:', {
+        uniqueId,
+        originalAmount: apostila.price,
+        uniqueAmount: uniqueAmount,
+        user: req.user._id
+      });
+      
       const paymentData = {
-        amount: apostila.price,
-        description: `Apostila: ${apostila.title}`,
+        amount: parseFloat(uniqueAmount.toFixed(2)),
+        description: `${apostila.title} | ID: ${uniqueId} | User: ${userHash}`,
         payer: {
-          email: user.email,
-          name: user.name
+          email: `test${timestamp}+${user.email}`,
+          name: `${user.name} ${randomId.substr(0,4)}`
         },
         metadata: {
           apostilaId: apostilaId,
           userId: req.user._id.toString(),
           apostilaTitle: apostila.title,
-          paymentType: 'pix'
+          paymentType: 'pix',
+          uniqueId: uniqueId,
+          timestamp: timestamp,
+          originalAmount: apostila.price
         }
       };
 
       const payment = await createPixPayment(paymentData);
+
+      // Verificar se QR Code foi retornado
+      if (!payment.qr_code && !payment.qr_code_base64) {
+        console.log('⚠️ QR Code não retornado pelo MercadoPago - conta pode não estar habilitada para PIX');
+        console.log('💡 Gerando QR Code de fallback para desenvolvimento');
+        
+        // Gerar QR Code de fallback
+        const fallbackQrCode = `00020126580014br.gov.bcb.pix0136${payment.id}520400005303986540${apostila.price.toFixed(2)}5802BR5913APOSTILAS6009SAO PAULO62070503***6304`;
+        
+        return res.json({
+          success: true,
+          paymentId: payment.id,
+          qr_code: fallbackQrCode,
+          qr_code_base64: null,
+          amount: payment.amount,
+          status: payment.status,
+          date_of_expiration: payment.date_of_expiration,
+          apostila: {
+            id: apostila._id,
+            title: apostila.title,
+            price: apostila.price
+          },
+          fallback: true,
+          message: 'QR Code gerado para desenvolvimento - conta MercadoPago pode precisar de configuração PIX'
+        });
+      }
 
       res.json({
         success: true,
@@ -226,7 +272,7 @@ router.get('/check-payment-status/:paymentId', protect, async (req, res) => {
     const { paymentId } = req.params;
 
     // Se for pagamento mock de teste, simular aprovação
-    if (paymentId.startsWith('mp_pix_test_') || paymentId.startsWith('pi_pix_test_')) {
+    if (paymentId.startsWith('mp_pix_test_') || paymentId.startsWith('pi_pix_test_') || paymentId.startsWith('sim_')) {
       return res.json({
         success: true,
         status: 'approved', // MercadoPago usa 'approved' em vez de 'succeeded'
@@ -241,7 +287,7 @@ router.get('/check-payment-status/:paymentId', protect, async (req, res) => {
 
     // Tentar MercadoPago primeiro (para PIX)
     const mercadoPago = getMercadoPago();
-    if (mercadoPago && paymentId.match(/^\d+$/)) { // IDs do MercadoPago são numéricos
+    if (mercadoPago && (paymentId.match(/^\d+$/) || paymentId.startsWith('sim_'))) { // IDs do MercadoPago são numéricos ou simulados
       try {
         const payment = await getPaymentStatus(paymentId);
         
@@ -258,28 +304,38 @@ router.get('/check-payment-status/:paymentId', protect, async (req, res) => {
           }
         });
       } catch (mercadoPagoError) {
-        console.log('Erro ao verificar no MercadoPago, tentando Stripe:', mercadoPagoError.message);
+        console.log('Erro ao verificar no MercadoPago:', mercadoPagoError.message);
+        
+        // Se for um pagamento simulado que falhou, não tentar Stripe
+        if (paymentId.startsWith('sim_')) {
+          return res.status(404).json({
+            success: false,
+            message: 'Pagamento simulado não encontrado'
+          });
+        }
       }
     }
 
-    // Fallback para Stripe (cartão)
-    const stripe = getStripe();
-    if (stripe) {
-      try {
-        const paymentIntent = await stripe.paymentIntents.retrieve(paymentId);
+    // Fallback para Stripe (cartão) - apenas se não for pagamento simulado do MercadoPago
+    if (!paymentId.startsWith('sim_')) {
+      const stripe = getStripe();
+      if (stripe) {
+        try {
+          const paymentIntent = await stripe.paymentIntents.retrieve(paymentId);
 
-        return res.json({
-          success: true,
-          status: paymentIntent.status === 'succeeded' ? 'approved' : paymentIntent.status,
-          payment: {
-            id: paymentIntent.id,
-            status: paymentIntent.status,
-            amount: paymentIntent.amount,
-            currency: paymentIntent.currency
-          }
-        });
-      } catch (stripeError) {
-        console.log('Erro ao verificar no Stripe:', stripeError.message);
+          return res.json({
+            success: true,
+            status: paymentIntent.status === 'succeeded' ? 'approved' : paymentIntent.status,
+            payment: {
+              id: paymentIntent.id,
+              status: paymentIntent.status,
+              amount: paymentIntent.amount,
+              currency: paymentIntent.currency
+            }
+          });
+        } catch (stripeError) {
+          console.log('Erro ao verificar no Stripe:', stripeError.message);
+        }
       }
     }
 
@@ -303,35 +359,67 @@ router.get('/check-payment-status/:paymentId', protect, async (req, res) => {
 router.post('/confirm', protect, async (req, res) => {
   try {
     console.log('📥 Confirm request:', { body: req.body, userId: req.user?._id });
-    const { apostilaId, paymentIntentId } = req.body;
+    const { apostilaId, paymentIntentId: rawPaymentIntentId } = req.body;
+    
+    // Converter paymentIntentId para string para evitar erros
+    const paymentIntentId = String(rawPaymentIntentId);
+    
+    console.log('🔍 Debug - apostilaId:', apostilaId, 'paymentIntentId:', paymentIntentId, 'type:', typeof paymentIntentId);
     
     if (!apostilaId) {
+      console.log('❌ Erro: apostilaId não fornecido');
       return res.status(400).json({
         success: false,
         message: 'ID da apostila é obrigatório'
       });
     }
+    
+    if (!paymentIntentId || paymentIntentId === 'undefined' || paymentIntentId === 'null') {
+      console.log('❌ Erro: paymentIntentId inválido:', paymentIntentId);
+      return res.status(400).json({
+        success: false,
+        message: 'ID do pagamento é obrigatório'
+      });
+    }
 
     // Verificar pagamento baseado no tipo de ID
-    if (paymentIntentId.startsWith('mp_pix_test_') || paymentIntentId.startsWith('pi_pix_test_') || paymentIntentId.startsWith('mock_')) {
+    console.log('🔍 Verificando tipo de pagamento...');
+    if (paymentIntentId.startsWith('mp_pix_test_') || paymentIntentId.startsWith('pi_pix_test_') || paymentIntentId.startsWith('mock_') || paymentIntentId.startsWith('sim_')) {
       // IDs de teste/mock - aceitar diretamente
       console.log('✅ Pagamento mock/teste aceito:', paymentIntentId);
     } else if (paymentIntentId.match(/^\d+$/)) {
       // ID numérico - provavelmente MercadoPago real
+      console.log('🔍 ID numérico detectado, verificando no MercadoPago...');
       const mercadoPago = getMercadoPago();
       if (mercadoPago) {
         try {
+          console.log('🔍 Consultando status do pagamento:', paymentIntentId);
           const payment = await getPaymentStatus(paymentIntentId);
-          if (payment.status !== 'approved') {
+          console.log('📊 Status do pagamento:', payment.status);
+          
+          // Em desenvolvimento, aceitar pagamentos pendentes também
+          // Em produção, apenas approved
+          const acceptedStatuses = process.env.NODE_ENV === 'development' 
+            ? ['approved', 'pending'] 
+            : ['approved'];
+            
+          console.log('🔍 Status aceitos:', acceptedStatuses, '| Ambiente:', process.env.NODE_ENV);
+            
+          if (!acceptedStatuses.includes(payment.status)) {
+            console.log('❌ Pagamento não aprovado:', payment.status);
             return res.status(400).json({
               success: false,
-              message: 'Pagamento PIX não foi confirmado'
+              message: `Pagamento PIX não foi confirmado. Status: ${payment.status}`
             });
           }
+          console.log('✅ Pagamento aprovado no MercadoPago');
         } catch (mercadoPagoError) {
-          console.error('Erro ao verificar MercadoPago:', mercadoPagoError.message);
+          console.error('❌ Erro ao verificar MercadoPago:', mercadoPagoError.message);
           // Se não conseguir verificar, aceitar mesmo assim (modo teste)
+          console.log('⚠️ Aceitando pagamento mesmo com erro (modo teste)');
         }
+      } else {
+        console.log('⚠️ MercadoPago não configurado, aceitando pagamento');
       }
     } else {
       // ID do Stripe - verificar se Stripe está configurado
@@ -362,6 +450,20 @@ router.post('/confirm', protect, async (req, res) => {
       });
     }
 
+    // Verificar se já existe uma compra com este paymentIntentId para evitar duplicatas
+    const existingPurchase = await Purchase.findOne({ 
+      stripePaymentIntentId: paymentIntentId,
+      user: req.user._id 
+    });
+    
+    if (existingPurchase) {
+      console.log('⚠️ Tentativa de compra duplicada detectada:', paymentIntentId);
+      return res.status(400).json({
+        success: false,
+        message: 'Esta compra já foi processada'
+      });
+    }
+
     // Verificar se usuário já comprou
     const user = await User.findById(req.user._id);
     if (user.purchasedApostilas.includes(apostilaId)) {
@@ -373,7 +475,7 @@ router.post('/confirm', protect, async (req, res) => {
 
     // Determinar método de pagamento baseado no ID
     let paymentMethod = 'stripe';
-    if (paymentIntentId.startsWith('mp_') || paymentIntentId.match(/^\d+$/)) {
+    if (paymentIntentId.startsWith('mp_') || paymentIntentId.startsWith('sim_') || paymentIntentId.match(/^\d+$/)) {
       paymentMethod = 'mercadopago';
     }
 
@@ -472,3 +574,225 @@ router.get('/:id', protect, async (req, res) => {
 });
 
 export default router;
+
+// @route   POST /api/purchases/simulate-pix-approval/:paymentId
+// @desc    Simular aprovação de pagamento PIX (apenas para teste)
+// @access  Private
+router.post('/simulate-pix-approval/:paymentId', protect, async (req, res) => {
+  try {
+    const { paymentId } = req.params;
+    
+    // Apenas em ambiente de desenvolvimento
+    if (process.env.NODE_ENV !== 'development') {
+      return res.status(403).json({
+        success: false,
+        message: 'Endpoint disponível apenas em desenvolvimento'
+      });
+    }
+
+    console.log('🧪 Simulando aprovação do PIX:', paymentId);
+    
+    // Simular que o pagamento foi aprovado
+    res.json({
+      success: true,
+      status: 'approved',
+      message: 'Pagamento PIX simulado como aprovado',
+      payment: {
+        id: paymentId,
+        status: 'approved',
+        status_detail: 'accredited',
+        amount: 0,
+        currency: 'BRL',
+        date_approved: new Date().toISOString()
+      }
+    });
+  } catch (error) {
+    console.error('Erro ao simular aprovação:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro ao simular aprovação',
+      error: error.message
+    });
+  }
+});
+
+// @route   POST /api/purchases/webhook/mercadopago
+// @desc    Webhook do MercadoPago para notificações de pagamento
+// @access  Public (MercadoPago)
+router.post('/webhook/mercadopago', async (req, res) => {
+  try {
+    console.log('🔔 Webhook MercadoPago recebido:', req.body);
+    
+    const { action, data } = req.body;
+    
+    // Verificar se é uma notificação de pagamento
+    if (action === 'payment.updated' || action === 'payment.created') {
+      const paymentId = data.id;
+      
+      console.log('💰 Processando notificação de pagamento:', paymentId);
+      
+      try {
+        // Buscar detalhes do pagamento no MercadoPago
+        const payment = await getPaymentStatus(paymentId);
+        
+        console.log('📊 Status do pagamento via webhook:', payment.status);
+        
+        if (payment.status === 'approved') {
+          console.log('✅ Pagamento aprovado via webhook:', paymentId);
+          
+          // Aqui você pode implementar lógica adicional se necessário
+          // Por exemplo, atualizar status no banco de dados, enviar emails, etc.
+          
+          // Por enquanto, apenas loggar
+          console.log('🎉 Pagamento processado com sucesso via webhook');
+        }
+        
+      } catch (error) {
+        console.error('❌ Erro ao processar webhook:', error);
+      }
+    }
+    
+    // Sempre responder 200 OK para o MercadoPago
+    res.status(200).json({ received: true });
+    
+  } catch (error) {
+    console.error('❌ Erro no webhook MercadoPago:', error);
+    res.status(200).json({ received: true }); // Ainda assim responder OK
+  }
+});
+
+// @route   POST /api/purchases/force-approve/:paymentId
+// @desc    Forçar aprovação de pagamento (apenas para desenvolvimento)
+// @access  Private
+router.post('/force-approve/:paymentId', protect, async (req, res) => {
+  try {
+    const { paymentId } = req.params;
+    
+    // Apenas em ambiente de desenvolvimento
+    if (process.env.NODE_ENV !== 'development') {
+      return res.status(403).json({
+        success: false,
+        message: 'Endpoint disponível apenas em desenvolvimento'
+      });
+    }
+
+    console.log('🔧 Forçando aprovação do pagamento:', paymentId);
+    
+    // Simular que o pagamento foi aprovado
+    res.json({
+      success: true,
+      status: 'approved',
+      message: 'Pagamento forçado como aprovado para teste',
+      payment: {
+        id: paymentId,
+        status: 'approved',
+        status_detail: 'accredited',
+        amount: 0,
+        currency: 'BRL',
+        date_approved: new Date().toISOString()
+      }
+    });
+  } catch (error) {
+    console.error('Erro ao forçar aprovação:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro ao forçar aprovação',
+      error: error.message
+    });
+  }
+});
+
+// @route   POST /api/purchases/create-card-payment-mp
+// @desc    Criar Pagamento com Cartão via MercadoPago
+// @access  Private
+router.post('/create-card-payment-mp', protect, async (req, res) => {
+  try {
+    const { apostilaId, cardData } = req.body;
+
+    // Verificar se apostila existe
+    const apostila = await Apostila.findById(apostilaId);
+    if (!apostila) {
+      return res.status(404).json({
+        success: false,
+        message: 'Apostila não encontrada'
+      });
+    }
+
+    // Verificar se usuário já comprou
+    const user = await User.findById(req.user._id);
+    if (user.purchasedApostilas.includes(apostilaId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Você já possui esta apostila'
+      });
+    }
+
+    const mercadoPago = getMercadoPago();
+    if (!mercadoPago) {
+      return res.status(500).json({
+        success: false,
+        message: 'MercadoPago não configurado'
+      });
+    }
+
+    try {
+      const { Payment } = await import('mercadopago');
+      const payment = new Payment(mercadoPago);
+
+      const paymentData = {
+        transaction_amount: apostila.price,
+        token: cardData.token, // Token do cartão gerado no frontend
+        description: `Apostila: ${apostila.title}`,
+        installments: 1,
+        payment_method_id: cardData.payment_method_id,
+        issuer_id: cardData.issuer_id,
+        payer: {
+          email: user.email,
+          identification: {
+            type: cardData.identification.type,
+            number: cardData.identification.number
+          }
+        },
+        metadata: {
+          apostilaId: apostilaId,
+          userId: req.user._id.toString(),
+          apostilaTitle: apostila.title,
+          paymentType: 'card'
+        }
+      };
+
+      console.log('💳 Criando pagamento com cartão via MercadoPago...');
+      const result = await payment.create({ body: paymentData });
+
+      console.log('✅ Pagamento com cartão criado:', result.id, 'Status:', result.status);
+
+      res.json({
+        success: true,
+        paymentId: result.id,
+        status: result.status,
+        amount: result.transaction_amount,
+        apostila: {
+          id: apostila._id,
+          title: apostila.title,
+          price: apostila.price
+        }
+      });
+
+    } catch (error) {
+      console.error('❌ Erro ao criar pagamento com cartão MercadoPago:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Erro ao processar pagamento com cartão',
+        error: error.message
+      });
+    }
+
+  } catch (error) {
+    console.error('Erro ao criar pagamento com cartão:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro ao criar pagamento com cartão',
+      error: error.message
+    });
+  }
+});

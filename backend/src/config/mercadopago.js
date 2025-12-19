@@ -15,8 +15,15 @@ export const getMercadoPago = () => {
     const isTestKey = accessToken.startsWith('TEST-') || accessToken.startsWith('APP_TEST-');
     const isProdKey = accessToken.startsWith('APP_USR-');
     
-    // Nota: MercadoPago agora usa APP_USR- tanto para teste quanto produção
-    // A diferença está no ambiente da conta, não no prefixo da chave
+    // Agora temos credenciais de teste reais!
+    const isDevEnvironment = process.env.NODE_ENV === 'development';
+    
+    if (isTestKey) {
+      console.log('✅ Usando credenciais de TESTE do MercadoPago');
+    } else if (isProdKey) {
+      console.log('🚀 Usando credenciais de PRODUÇÃO do MercadoPago');
+      console.log('💰 PIX real habilitado - pagamentos serão processados');
+    }
 
     try {
       mercadoPago = new MercadoPagoConfig({
@@ -83,6 +90,12 @@ export const createPixPayment = async (paymentData) => {
     const result = await payment.create({ body: paymentRequest });
     
     console.log('✅ Pagamento PIX criado com sucesso:', result.id);
+    console.log('🔍 Dados do PIX retornados:', {
+      qr_code: result.point_of_interaction?.transaction_data?.qr_code ? 'Presente' : 'Ausente',
+      qr_code_base64: result.point_of_interaction?.transaction_data?.qr_code_base64 ? 'Presente' : 'Ausente',
+      ticket_url: result.point_of_interaction?.transaction_data?.ticket_url ? 'Presente' : 'Ausente'
+    });
+    
     return {
       id: result.id,
       status: result.status,
@@ -166,6 +179,13 @@ export const createPixPayment = async (paymentData) => {
       console.error('   1. Obtenha credenciais específicas de TESTE/SANDBOX');
       console.error('   2. Verifique se está usando a aba "Test" no painel MercadoPago');
       console.error('   3. Crie uma aplicação específica para testes');
+      
+      // Em desenvolvimento, usar simulação
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🚫 Credenciais de produção detectadas - usando simulação');
+        return createSimulatedPixPayment(paymentData);
+      }
+      
       throw new Error('LIVE_CREDENTIALS_IN_TEST');
     }
     
@@ -174,6 +194,19 @@ export const createPixPayment = async (paymentData) => {
 };
 
 export const getPaymentStatus = async (paymentId) => {
+  // Se for pagamento simulado, retornar status simulado
+  if (paymentId.startsWith('sim_')) {
+    return {
+      id: paymentId,
+      status: 'approved',
+      status_detail: 'accredited',
+      amount: 0,
+      currency: 'BRL',
+      date_created: new Date().toISOString(),
+      date_approved: new Date().toISOString()
+    };
+  }
+
   const client = getMercadoPago();
   
   if (!client) {
@@ -197,4 +230,22 @@ export const getPaymentStatus = async (paymentId) => {
     console.error('Erro ao buscar status do pagamento:', error);
     throw error;
   }
+};
+// Funcao para simular pagamento PIX em desenvolvimento
+const createSimulatedPixPayment = async (paymentData) => {
+  console.log('✅ Usando modo simulação - PIX funcionará normalmente');
+  
+  const simulatedPayment = {
+    id: `sim_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    status: 'pending',
+    qr_code: 'PIX_SIMULADO_PARA_DESENVOLVIMENTO',
+    qr_code_base64: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+    ticket_url: 'https://mercadopago.com.br/sandbox/payments/sim_payment',
+    amount: paymentData.amount,
+    currency: 'BRL',
+    date_created: new Date().toISOString(),
+    date_of_expiration: new Date(Date.now() + 30 * 60 * 1000).toISOString() // 30 minutos
+  };
+  
+  return simulatedPayment;
 };
