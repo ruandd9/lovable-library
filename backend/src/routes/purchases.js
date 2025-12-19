@@ -144,7 +144,7 @@ router.post('/create-pix-payment', protect, async (req, res) => {
       const uniqueId = `${timestamp}_${randomId}_${userHash}`;
       
       // Alterar valor DRASTICAMENTE para forçar novo pagamento
-      const randomValue = Math.floor(Math.random() * 500) + 100; // R$ 1,00 a R$ 5,00
+      const randomValue = Math.floor(Math.random() * 2000) + 500; // R$ 5,00 a R$ 25,00
       const uniqueAmount = (randomValue / 100);
       
       console.log('🔄 Gerando pagamento único:', {

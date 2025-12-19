@@ -102,6 +102,14 @@ export const createPixPayment = async (paymentData) => {
     };
 
     console.log('🔄 Criando pagamento PIX com CPF de teste:', testCPF);
+    console.log('📋 DADOS COMPLETOS enviados para MercadoPago:');
+    console.log('💰 Valor:', paymentRequest.transaction_amount);
+    console.log('📝 Descrição:', paymentRequest.description);
+    console.log('👤 Pagador:', JSON.stringify(paymentRequest.payer, null, 2));
+    console.log('📦 Items:', JSON.stringify(paymentRequest.items, null, 2));
+    console.log('🔗 Webhook URL:', paymentRequest.notification_url);
+    console.log('🆔 Referência Externa:', paymentRequest.external_reference);
+    
     const result = await payment.create({ body: paymentRequest });
     
     console.log('✅ Pagamento PIX criado com sucesso:', result.id);
