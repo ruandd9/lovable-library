@@ -137,18 +137,38 @@ router.post('/create-pix-payment', protect, async (req, res) => {
 
     // Criar pagamento PIX no MercadoPago
     try {
+      // Gerar dados MUITO únicos para forçar novo pagamento
+      const timestamp = Date.now();
+      const randomId = Math.random().toString(36).substr(2, 12);
+      const userHash = req.user._id.toString().substr(-6);
+      const uniqueId = `${timestamp}_${randomId}_${userHash}`;
+      
+      // Alterar valor com mais variação para forçar novo pagamento
+      const randomCents = Math.floor(Math.random() * 99) + 1; // 1-99 centavos
+      const uniqueAmount = apostila.price + (randomCents / 100);
+      
+      console.log('🔄 Gerando pagamento único:', {
+        uniqueId,
+        originalAmount: apostila.price,
+        uniqueAmount: uniqueAmount,
+        user: req.user._id
+      });
+      
       const paymentData = {
-        amount: apostila.price,
-        description: `Apostila: ${apostila.title}`,
+        amount: parseFloat(uniqueAmount.toFixed(2)),
+        description: `${apostila.title} | ID: ${uniqueId} | User: ${userHash}`,
         payer: {
-          email: user.email,
-          name: user.name
+          email: `test${timestamp}+${user.email}`,
+          name: `${user.name} ${randomId.substr(0,4)}`
         },
         metadata: {
           apostilaId: apostilaId,
           userId: req.user._id.toString(),
           apostilaTitle: apostila.title,
-          paymentType: 'pix'
+          paymentType: 'pix',
+          uniqueId: uniqueId,
+          timestamp: timestamp,
+          originalAmount: apostila.price
         }
       };
 
